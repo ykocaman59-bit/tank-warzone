@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Battle City - Retro Tank</title>
+    <style>
+        body {
+            background-color: #111;
+            color: #fff;
+            font-family: 'Courier New', Courier, monospace;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 { margin-bottom: 5px; color: #f1c40f; }
+        p { color: #aaa; margin-top: 0; }
+        canvas {
+            border: 4px solid #fff;
+            background-color: #000;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body>
+
+    <h1>BATTLE CITY</h1>
+    <p>Yön Tuşları: Hareket | Boşluk: Ateş Et</p>
+    <canvas id="gameCanvas" width="512" height="512"></canvas>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+
+        const tileSize = 32;
+
+        // Oyuncu Tankı
+        let player = {
+            x: 192,
+            y: 480,
+            size: 28,
+            speed: 2,
+            dx: 0,
+            dy: -2,
+            dir: 'UP'
+        };
+
+        let bullets = [];
+        let keys = {};
+
+        // Harita Elemanları (1: Tuğla Duvar, 2: Çelik Duvar)
+        let map = [
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,1,1,0,1,1,0,1,1,0,1,1,0,1,1,0],
+            [0,1,1,0,1,1,0,1,1,0,1,1,0,1,1,0],
+            [0,1,1,0,1,1,0,2,2,0,1,1,0,1,1,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,1,1,0,0,1,1,0,0,1,1,0,0,1,1,0],
+            [2,2,0,0,0,1,1,0,0,1,1,0,0,0,2,2],
+            [0,0,0,1,1,0,0,0,0,0,0,1,1,0,0,0],
+            [0,0,0,1,1,0,2,2,2,2,0,1,1,0,0,0],
+            [0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0],
+            [1,1,0,1,1,0,1,1,1,1,0,1,1,0,1,1],
+            [1,1,0,1,1,0,0,0,0,0,0,1,1,0,1,1],
+            [0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0],
+            [0,1,1,1,1,0,1,1,1,1,0,1,1,1,1,0],
+            [0,1,1,1,1,0,0,0,0,0,0,1,1,1,1,0],
+            [0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0]
+        ];
+
+        window.addEventListener("keydown", (e) => {
+            keys[e.code] = true;
+            if (e.code === "Space") {
+                shootBullet();
+            }
+        });
+
+        window.addEventListener("keyup", (e) => {
+            keys[e.code] = false;
+        });
+
+        function shootBullet() {
+            let bx = player.x + player.size / 2 - 2;
+            let by = player.y + player.size / 2 - 2;
+            let bdx = 0, bdy = 0;
+            let bSpeed = 5;
+
+            if (player.dir === 'UP') bdy = -bSpeed;
+            if (player.dir === 'DOWN') bdy = bSpeed;
+            if (player.dir === 'LEFT') bdx = -bSpeed;
+            if (player.dir === 'RIGHT') bdx = bSpeed;
+
+            bullets.push({ x: bx, y: by, dx: bdx, dy: bdy, size: 6 });
+        }
+
+        function update() {
+            // Hareket Kontrolleri
+            player.dx = 0;
+            player.dy = 0;
+
+            if (keys["ArrowUp"]) {
+                player.dy = -player.speed;
+                player.dir = 'UP';
+            } else if (keys["ArrowDown"]) {
+                player.dy = player.speed;
+                player.dir = 'DOWN';
+            } else if (keys["ArrowLeft"]) {
+                player.dx = -player.speed;
+                player.dir = 'LEFT';
+            } else if (keys["ArrowRight"]) {
+                player.dx = player.speed;
+                player.dir = 'RIGHT';
+            }
+
+            // Sınırlar ve çarpışma kontrolü
+            player.x += player.dx;
+            if (player.x < 0) player.x = 0;
+            if (player.x + player.size > canvas.width) player.x = canvas.width - player.size;
+
+            player.y += player.dy;
+            if (player.y < 0) player.y = 0;
+            if (player.y + player.size > canvas.height) player.y = canvas.height - player.size;
+
+            // Mermi Güncelleme
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                let b = bullets[i];
+                b.x += b.dx;
+                b.y += b.dy;
+
+                // Ekran dışına çıkma
+                if (b.x < 0 || b.x > canvas.width || b.y < 0 || b.y > canvas.height) {
+                    bullets.splice(i, 1);
+                    continue;
+                }
+
+                // Harita Çarpışma Kontrolü (Tuğla kırma)
+                let mapX = Math.floor((b.x + b.size / 2) / tileSize);
+                let mapY = Math.floor((b.y + b.size / 2) / tileSize);
+
+                if (mapY >= 0 && mapY < 16 && mapX >= 0 && mapX < 16) {
+                    if (map[mapY][mapX] === 1) {
+                        map[mapY][mapX] = 0; // Tuğlayı yok et
+                        bullets.splice(i, 1);
+                    } else if (map[mapY][mapX] === 2) {
+                        bullets.splice(i, 1); // Çelik duvara çarpıp yok ol
+                    }
+                }
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Haritayı Çiz
+            for (let r = 0; r < 16; r++) {
+                for (let c = 0; c < 16; c++) {
+                    if (map[r][c] === 1) {
+                        ctx.fillStyle = "#c0392b"; // Tuğla rengi
+                        ctx.fillRect(c * tileSize, r * tileSize, tileSize, tileSize);
+                        ctx.strokeStyle = "#000";
+                        ctx.strokeRect(c * tileSize, r * tileSize, tileSize, tileSize);
+                    } else if (map[r][c] === 2) {
+                        ctx.fillStyle = "#7f8c8d"; // Çelik rengi
+                        ctx.fillRect(c * tileSize, r * tileSize, tileSize, tileSize);
+                        ctx.strokeStyle = "#fff";
+                        ctx.strokeRect(c * tileSize, r * tileSize, tileSize, tileSize);
+                    }
+                }
+            }
+
+            // Oyuncu Tankını Çiz
+            ctx.fillStyle = "#f1c40f"; // Sarı Tank
+            ctx.fillRect(player.x, player.y, player.size, player.size);
+
+            // Tankın namlusu
+            ctx.fillStyle = "#d35400";
+            let nx = player.x + player.size / 2 - 3;
+            let ny = player.y + player.size / 2 - 3;
+            if (player.dir === 'UP') ny = player.y - 6;
+            if (player.dir === 'DOWN') ny = player.y + player.size;
+            if (player.dir === 'LEFT') nx = player.x - 6;
+            if (player.dir === 'RIGHT') nx = player.x + player.size;
+            ctx.fillRect(nx, ny, 6, 6);
+
+            // Mermileri Çiz
+            ctx.fillStyle = "#fff";
+            for (let b of bullets) {
+                ctx.fillRect(b.x, b.y, b.size, b.size);
+            }
+        }
+
+        function loop() {
+            update();
+            draw();
+            requestAnimationFrame(loop);
+        }
+
+        loop();
+    </script>
+</body>
+</html>
+
