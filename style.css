@@ -1,0 +1,18 @@
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
+body { background: #f4f6f9; color: #333; display: flex; justify-content: center; padding: 20px; }
+.container { width: 100%; max-width: 500px; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+header { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
+header h1 { text-align: center; color: #2c3e50; }
+input, button { padding: 10px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; outline: none; }
+button { background: #27ae60; color: #fff; border: none; cursor: pointer; font-weight: bold; transition: background 0.2s; }
+button:hover { background: #219653; }
+.player-card { background: #e8f8f5; padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 20px; }
+.player-card h3 { margin-bottom: 10px; font-size: 15px; color: #16a085; }
+audio { width: 100%; }
+.list-container { max-height: 380px; overflow-y: auto; border-top: 1px solid #eee; }
+ul { list-style: none; }
+li { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; transition: background 0.2s; }
+li:hover { background: #f9f9f9; }
+li b { display: block; color: #2c3e50; font-size: 15px; }
+li span { font-size: 13px; color: #7f8c8d; }
+
